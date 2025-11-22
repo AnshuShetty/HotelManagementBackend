@@ -52,7 +52,7 @@ export const resolvers = {
     },
     bookings: async (_, __, ctx) => {
       requireAdmin(ctx);
-      return Booking.find().populate("room").populate("user");
+      return await Booking.find().populate("room").populate("user");
     },
   },
 
@@ -154,8 +154,8 @@ export const resolvers = {
     },
   },
 
-  Booking: {
-    user: (b) => User.findById(b.user),
-    room: (b) => Room.findById(b.room),
-  },
+  // Booking: {
+  //   user: (b) => User.findById(b.user),
+  //   room: (b) => Room.findById(b.room),
+  // },
 };
