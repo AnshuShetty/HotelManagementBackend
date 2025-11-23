@@ -44,6 +44,9 @@ export const resolvers = {
     room: async (_, { id }) => {
       return await Room.findById(id);
     },
+    roomBookingCount: async (_, { id }) => {
+      return await Booking.countDocuments({ room: id, status: "CONFIRMED" });
+    },
     myBookings: async (_, __, ctx) => {
       requireAuth(ctx);
       return Booking.find({ user: ctx.user.id })
@@ -53,6 +56,15 @@ export const resolvers = {
     bookings: async (_, __, ctx) => {
       requireAdmin(ctx);
       return await Booking.find().populate("room").populate("user");
+    },
+  },
+
+  Room: {
+    bookingCount: async (parent) => {
+      return await Booking.countDocuments({
+        room: parent._id,
+        status: "CONFIRMED",
+      });
     },
   },
 
@@ -131,7 +143,7 @@ export const resolvers = {
 
       const totalPrice = nights * room.pricePerNight;
 
-      return Booking.create({
+      const booking = await Booking.create({
         user: ctx.user.id,
         room: room._id,
         checkIn: input.checkIn,
@@ -139,6 +151,24 @@ export const resolvers = {
         guests: input.guests ?? 1,
         totalPrice,
       });
+
+      // Populate room + user so GraphQL resolves fields properly
+      await booking.populate("room");
+      await booking.populate("user");
+
+      // Convert `_id` and any referenced ObjectId to strings
+      return {
+        ...booking.toObject(),
+        id: booking._id.toString(),
+        room: {
+          ...booking.room.toObject(),
+          id: booking.room._id.toString(),
+        },
+        user: {
+          ...booking.user.toObject(),
+          id: booking.user._id.toString(),
+        },
+      };
     },
 
     cancelBooking: async (_, { id }, ctx) => {
@@ -151,6 +181,23 @@ export const resolvers = {
       b.status = "CANCELLED";
       await b.save();
       return b;
+    },
+
+    submitReview: async (_, { input }, ctx) => {
+      requireAuth(ctx);
+      const booking = await Booking.findById(input.bookingId);
+      if (!booking) throw new GraphQLError("Booking not found");
+      if (String(booking.user) !== ctx.user.id)
+        throw new GraphQLError("Forbidden");
+      if (booking.review)
+        throw new GraphQLError("Review already submitted for this booking");
+      const review = {
+        rating: input.rating,
+        comment: input.comment,
+      };
+      booking.review = review;
+      await booking.save();
+      return review;
     },
   },
 

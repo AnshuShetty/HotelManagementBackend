@@ -20,6 +20,7 @@ export const typeDefs = gql`
     amenities: [String!]!
     images: [String!]!
     isActive: Boolean!
+    bookingCount: Int!
   }
 
   type Booking {
@@ -32,6 +33,19 @@ export const typeDefs = gql`
     totalPrice: Float!
     status: String!
     createdAt: Date!
+    review: Review
+  }
+
+  type Review {
+    id: ID!
+    rating: Int!
+    comment: String!
+  }
+
+  input ReviewInput {
+    bookingId: ID!
+    rating: Int!
+    comment: String!
   }
 
   type AuthPayload {
@@ -77,6 +91,7 @@ export const typeDefs = gql`
     me: User
     rooms(activeOnly: Boolean = true): [Room!]!
     room(id: ID!): Room
+    roomBookingCount(roomId: ID!): Int!
     myBookings: [Booking!]!
     bookings: [Booking!]! # admin
   }
@@ -89,5 +104,6 @@ export const typeDefs = gql`
     toggleRoomActive(id: ID!, isActive: Boolean!): Room! # admin
     bookRoom(input: BookingInput!): Booking!
     cancelBooking(id: ID!): Booking!
+    submitReview(input: ReviewInput!): Review!
   }
 `;
