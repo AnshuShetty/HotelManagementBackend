@@ -4,6 +4,7 @@ import { signToken } from "../auth.js";
 import User from "../models/User.js";
 import Room from "../models/Room.js";
 import Booking from "../models/Booking.js";
+import Contact from "../models/Contact.js";
 
 const requireAuth = (ctx) => {
   if (!ctx.user)
@@ -56,6 +57,9 @@ export const resolvers = {
     bookings: async (_, __, ctx) => {
       requireAdmin(ctx);
       return await Booking.find().populate("room").populate("user");
+    },
+    getContacts: async () => {
+      return await Contact.find().sort({ createdAt: -1 });
     },
   },
 
@@ -198,6 +202,15 @@ export const resolvers = {
       booking.review = review;
       await booking.save();
       return review;
+    },
+    submitContact: async (_, { input }) => {
+      // No authentication required for contact submissions
+      const contact = await Contact.create({
+        name: input.name,
+        email: input.email,
+        message: input.message,
+      });
+      return contact;
     },
   },
 

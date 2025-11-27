@@ -66,6 +66,15 @@ export const typeDefs = gql`
     caption: String
   }
 
+  type Contact {
+    id: ID!
+    name: String!
+    email: String!
+    message: String!
+    createdAt: Date!
+    updatedAt: Date!
+  }
+
   input LoginInput {
     email: String!
     password: String!
@@ -87,6 +96,12 @@ export const typeDefs = gql`
     guests: Int = 1
   }
 
+  input ContactInput {
+    name: String!
+    email: String!
+    message: String!
+  }
+
   type Query {
     me: User
     rooms(activeOnly: Boolean = true): [Room!]!
@@ -94,6 +109,7 @@ export const typeDefs = gql`
     roomBookingCount(roomId: ID!): Int!
     myBookings: [Booking!]!
     bookings: [Booking!]! # admin
+    getContacts: [Contact!]!
   }
 
   type Mutation {
@@ -105,5 +121,6 @@ export const typeDefs = gql`
     bookRoom(input: BookingInput!): Booking!
     cancelBooking(id: ID!): Booking!
     submitReview(input: ReviewInput!): Review!
+    submitContact(input: ContactInput!): Contact!
   }
 `;
