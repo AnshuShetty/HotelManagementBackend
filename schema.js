@@ -3,6 +3,11 @@ import gql from "graphql-tag";
 export const typeDefs = gql`
   scalar Date
 
+  enum DeleteStatus {
+    SUCCESS
+    ERROR
+  }
+
   type User {
     id: ID!
     name: String
@@ -21,6 +26,9 @@ export const typeDefs = gql`
     images: [String!]!
     isActive: Boolean!
     bookingCount: Int!
+    ratings: [Review!]!
+    averageRating: Float
+    totalReviews: Int
   }
 
   type Booking {
@@ -34,18 +42,6 @@ export const typeDefs = gql`
     status: String!
     createdAt: Date!
     review: Review
-  }
-
-  type Review {
-    id: ID!
-    rating: Int!
-    comment: String!
-  }
-
-  input ReviewInput {
-    bookingId: ID!
-    rating: Int!
-    comment: String!
   }
 
   type AuthPayload {
@@ -75,6 +71,22 @@ export const typeDefs = gql`
     updatedAt: Date!
   }
 
+  type Review {
+    id: ID!
+    user: User!
+    rating: Int!
+    comment: String!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  input ReviewInput {
+    bookingId: ID!
+    roomId: ID!
+    rating: Int!
+    comment: String!
+  }
+
   input LoginInput {
     email: String!
     password: String!
@@ -102,6 +114,16 @@ export const typeDefs = gql`
     message: String!
   }
 
+  type DeletedRoomResponse {
+    status: DeleteStatus!
+    message: String!
+    roomId: ID
+  }
+
+  input DeleteRoomInput {
+    roomId: ID!
+  }
+
   type Query {
     me: User
     rooms(activeOnly: Boolean = true): [Room!]!
@@ -110,6 +132,7 @@ export const typeDefs = gql`
     myBookings: [Booking!]!
     bookings: [Booking!]! # admin
     getContacts: [Contact!]!
+    getReviews(roomId: ID!): [Review!]!
   }
 
   type Mutation {
@@ -122,5 +145,7 @@ export const typeDefs = gql`
     cancelBooking(id: ID!): Booking!
     submitReview(input: ReviewInput!): Review!
     submitContact(input: ContactInput!): Contact!
+    addReview(input: ReviewInput!): Review!
+    deleteRoom(id: ID!): Room! # admin
   }
 `;

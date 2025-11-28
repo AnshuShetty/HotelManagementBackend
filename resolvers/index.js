@@ -40,8 +40,9 @@ export const resolvers = {
 
     rooms: async (_, { activeOnly }) => {
       const q = activeOnly ? { isActive: true } : {};
-      return Room.find(q).sort({ number: 1 });
+      return await Room.find(q).sort({ number: 1 });
     },
+
     room: async (_, { id }) => {
       return await Room.findById(id);
     },
@@ -60,6 +61,12 @@ export const resolvers = {
     },
     getContacts: async () => {
       return await Contact.find().sort({ createdAt: -1 });
+    },
+    getReviews: async (_, { roomId }) => {
+      const room = await Room.findById(roomId).populate("reviews.user");
+      if (!room) throw new Error("Room not found");
+
+      return room.reviews;
     },
   },
 
@@ -187,6 +194,13 @@ export const resolvers = {
       return b;
     },
 
+    deleteRoom: async (_, { id }, ctx) => {
+      requireAdmin(ctx);
+      const room = await Room.findByIdAndDelete(id);
+      if (!room) throw new GraphQLError("Room not found");
+      return room;
+    },
+
     submitReview: async (_, { input }, ctx) => {
       requireAuth(ctx);
       const booking = await Booking.findById(input.bookingId);
@@ -211,6 +225,30 @@ export const resolvers = {
         message: input.message,
       });
       return contact;
+    },
+
+    addReview: async (_, { input }, ctx) => {
+      requireAuth(ctx);
+      const booking = await Booking.findById(input.bookingId).populate("room");
+      if (!booking) throw new GraphQLError("Booking not found");
+      if (String(booking.user) !== ctx.user.id)
+        throw new GraphQLError("Forbidden");
+      if (booking.review)
+        throw new GraphQLError("Review already submitted for this booking");
+      const review = {
+        rating: input.rating,
+        comment: input.comment,
+      };
+      booking.review = review;
+      await booking.save();
+      // Update Room's averageRating and totalReviews
+      const room = await Room.findById(booking.room._id);
+      room.reviews.push({ ...review, user: ctx.user.id });
+      room.totalReviews = room.reviews.length;
+      room.averageRating =
+        room.reviews.reduce((sum, r) => sum + r.rating, 0) / room.totalReviews;
+      await room.save();
+      return review;
     },
   },
 
