@@ -124,6 +124,16 @@ export const typeDefs = gql`
     roomId: ID!
   }
 
+  type CancelBooking {
+    BookingID: ID!
+    status: String!
+    message: String!
+  }
+
+  input CancelBookingInput {
+    bookingId: ID!
+  }
+
   type Query {
     me: User
     rooms(activeOnly: Boolean = true): [Room!]!
@@ -142,10 +152,10 @@ export const typeDefs = gql`
     updateRoom(id: ID!, input: RoomInput!): Room! # admin
     toggleRoomActive(id: ID!, isActive: Boolean!): Room! # admin
     bookRoom(input: BookingInput!): Booking!
-    cancelBooking(id: ID!): Booking!
+    cancelBooking(id: ID!): CancelBooking!
     submitReview(input: ReviewInput!): Review!
     submitContact(input: ContactInput!): Contact!
     addReview(input: ReviewInput!): Review!
-    deleteRoom(id: ID!): Room! # admin
+    deleteRoom(id: ID!): DeletedRoomResponse! # admin
   }
 `;
