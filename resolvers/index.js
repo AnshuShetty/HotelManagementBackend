@@ -197,8 +197,11 @@ export const resolvers = {
     deleteRoom: async (_, { id }, ctx) => {
       requireAdmin(ctx);
       const room = await Room.findByIdAndDelete(id);
-      if (!room) throw new GraphQLError("Room not found");
-      return room;
+      return {
+        status: room ? "SUCCESS" : "ERROR",
+        message: room ? "Room deleted successfully" : "Room not found",
+        roomId: room?._id,
+      };
     },
 
     submitReview: async (_, { input }, ctx) => {
