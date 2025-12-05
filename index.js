@@ -6,6 +6,10 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
+import {
+  ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageProductionDefault,
+} from "@apollo/server/plugin/landingPage/default";
 import http from "http";
 
 import { typeDefs } from "./schema.js";
@@ -34,6 +38,13 @@ async function start() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    plugins: [
+      process.env.NODE_ENV === "production"
+        ? ApolloServerPluginLandingPageProductionDefault({
+            footer: false,
+          })
+        : ApolloServerPluginLandingPageLocalDefault({ footer: false }),
+    ],
   });
 
   await server.start();
@@ -61,7 +72,7 @@ async function start() {
 
   // ✅ Start the Express server
   await new Promise((resolve) =>
-    httpServer.listen({ port: appConfig.PORT }, resolve)
+    httpServer.listen({ port: appConfig.PORT, host: "0.0.0.0" }, resolve)
   );
 
   console.log(
