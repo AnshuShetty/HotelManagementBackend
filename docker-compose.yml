@@ -4,28 +4,20 @@ services:
   mongodb:
     image: mongo:latest
     container_name: hotel-mongodb
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - mongodb_data:/data/db
     restart: unless-stopped
 
   backend:
-    build: .
+    image: anshushetty/hotelmanagementbackend:latest
     container_name: hotel-management-backend
     ports:
       - "4000:4000"
     environment:
-      - NODE_ENV=development
-      - MONGO_URI=mongodb://admin:password@mongodb:27017/hotel?authSource=admin
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongodb:27017/hotelBooking
     depends_on:
       - mongodb
-    volumes:
-      - .:/app
-      - /app/node_modules
     restart: unless-stopped
 
 volumes:
