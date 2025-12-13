@@ -75,9 +75,7 @@ async function start() {
     httpServer.listen({ port: appConfig.PORT, host: "0.0.0.0" }, resolve)
   );
 
-  console.log(
-    `✅ Server running at http://localhost:${appConfig.PORT}/graphql`
-  );
+  console.log(`✅ Server running at http://0.0.0.0:${appConfig.PORT}/graphql`);
 }
 
 // start server
