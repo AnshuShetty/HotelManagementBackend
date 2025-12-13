@@ -60,7 +60,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            cd /path/to/your/app
+            cd /home/ubuntu/HotelmanagementSystem/HotelManagementBackend
             git pull origin main
             npm ci
             pm2 restart all # if using PM2
