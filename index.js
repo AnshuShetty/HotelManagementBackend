@@ -67,7 +67,7 @@ async function start() {
 
   // Optional: a simple home route
   app.get("/", (_, res) =>
-    res.send("🏨 Hotel Booking GraphQL API is running!")
+    res.send("🏨 Hotel Booking GraphQL API is running successfully!")
   );
 
   // ✅ Start the Express server
