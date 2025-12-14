@@ -1,6 +1,5 @@
 name: Node.js CI/CD
 
-# Run on push or pull request to main branch
 on:
   push:
     branches: [main]
@@ -12,21 +11,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the code
+      #  Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2 Setup Node.js environment
+      # Setup Node.js (MATCH SERVER VERSION)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20" # match your Node.js version
+          node-version: "18.19.1"
 
-      # 3 Install dependencies
+      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 4 Run tests
+      # Run tests
       - name: Run tests
         run: npm test
 
@@ -36,22 +35,25 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Setup Node.js (MATCH SERVER VERSION)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
+          node-version: "18.19.1"
 
+      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 5 Optional: Build your app (if needed)
+      # Build app (only if you actually have a build step)
       - name: Build
-        run: npm run build
+        run: npm run build --if-present
 
-      # 6 Deploy to your server via SSH
+      #  Deploy to server via SSH
       - name: Deploy to Server
         uses: appleboy/ssh-action@v0.1.7
         with:
@@ -60,7 +62,7 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            cd /home/ubuntu/HotelmanagementSystem/HotelManagementBackend
+            cd /home/ubuntu/HMS/HotelManagementBackend
             git pull origin main
             npm ci
-            pm2 restart all # if using PM2
+            pm2 restart all
