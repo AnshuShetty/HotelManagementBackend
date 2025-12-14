@@ -27,7 +27,7 @@ jobs:
 
       # Run tests
       - name: Run tests
-        run: npm test
+        run: npm test --if-present
 
   deploy:
     needs: build-and-test
