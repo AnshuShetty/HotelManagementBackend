@@ -5,6 +5,8 @@ import User from "../models/User.js";
 import Room from "../models/Room.js";
 import Booking from "../models/Booking.js";
 import Contact from "../models/Contact.js";
+import { getBookingStatus } from "../utils/bookingStatus.js";
+import { applyHotelTimes } from "../utils/bookingTime.js";
 
 const requireAuth = (ctx) => {
   if (!ctx.user)
@@ -49,15 +51,53 @@ export const resolvers = {
     roomBookingCount: async (_, { id }) => {
       return await Booking.countDocuments({ room: id, status: "CONFIRMED" });
     },
+
     myBookings: async (_, __, ctx) => {
       requireAuth(ctx);
-      return Booking.find({ user: ctx.user.id })
+      const bookings = await Booking.find({ user: ctx.user.id })
         .populate("room")
         .populate("user");
+
+      return bookings.map((b) => {
+        const { checkIn, checkOut } = applyHotelTimes(b.checkIn, b.checkOut);
+        return {
+          ...b.toObject(),
+          id: b._id.toString(),
+          checkIn,
+          checkOut,
+          status: getBookingStatus({ ...b.toObject(), checkIn, checkOut }),
+          room: b.room
+            ? { ...b.room.toObject(), id: b.room._id.toString() }
+            : null,
+          user: b.user
+            ? { ...b.user.toObject(), id: b.user._id.toString() }
+            : null,
+        };
+      });
     },
+
     bookings: async (_, __, ctx) => {
       requireAdmin(ctx);
-      return await Booking.find().populate("room").populate("user");
+      const adminBookings = await Booking.find()
+        .populate("room")
+        .populate("user");
+      return adminBookings.map((b) => {
+        const { checkIn, checkOut } = applyHotelTimes(b.checkIn, b.checkOut);
+        return {
+          ...b.toObject(),
+          id: b._id.toString(),
+          checkIn,
+          checkOut,
+          status: getBookingStatus({ ...b.toObject(), checkIn, checkOut }),
+          room: b.room
+            ? { ...b.room.toObject(), id: b.room._id.toString() }
+            : null,
+          user: b.user
+            ? { ...b.user.toObject(), id: b.user._id.toString() }
+            : null,
+        };
+      });
+      // return await Booking.find().populate("room").populate("user");
     },
     getContacts: async () => {
       return await Contact.find().sort({ createdAt: -1 });
@@ -132,45 +172,54 @@ export const resolvers = {
 
     bookRoom: async (_, { input }, ctx) => {
       requireAuth(ctx);
+
+      // Apply hotel check-in/check-out times
+      const { checkIn, checkOut } = applyHotelTimes(
+        input.checkIn,
+        input.checkOut
+      );
+
       const room = await Room.findById(input.roomId);
-      if (!room || !room.isActive) throw new GraphQLError("Room not available");
+      if (!room || !room.isActive) {
+        throw new GraphQLError("Room not available");
+      }
 
       const nights = nightsBetween(input.checkIn, input.checkOut);
-      if (nights <= 0) throw new GraphQLError("Invalid dates");
+      if (nights <= 0) {
+        throw new GraphQLError("Invalid dates");
+      }
 
       const overlapping = await Booking.findOne({
         room: room._id,
-        status: "CONFIRMED",
-        $or: [
-          {
-            checkIn: { $lt: input.checkOut },
-            checkOut: { $gt: input.checkIn },
-          }, // overlap
-        ],
+        status: { $ne: "CANCELLED" },
+        checkIn: { $lt: checkOut },
+        checkOut: { $gt: checkIn },
       });
 
-      if (overlapping)
+      if (overlapping) {
         throw new GraphQLError("Room already booked for those dates");
+      }
 
       const totalPrice = nights * room.pricePerNight;
 
       const booking = await Booking.create({
         user: ctx.user.id,
         room: room._id,
-        checkIn: input.checkIn,
-        checkOut: input.checkOut,
+        checkIn,
+        checkOut,
         guests: input.guests ?? 1,
         totalPrice,
       });
 
-      // Populate room + user so GraphQL resolves fields properly
       await booking.populate("room");
       await booking.populate("user");
 
-      // Convert `_id` and any referenced ObjectId to strings
       return {
         ...booking.toObject(),
         id: booking._id.toString(),
+        checkIn,
+        checkOut,
+        status: getBookingStatus(booking),
         room: {
           ...booking.room.toObject(),
           id: booking.room._id.toString(),
