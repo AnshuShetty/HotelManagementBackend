@@ -66,7 +66,7 @@ async function start() {
   );
 
   // Optional: a simple home route
-  app.get("/graphql/home", (_, res) =>
+  app.get("/home", (_, res) =>
     res.send("🏨 Hotel Booking GraphQL API is running successfully!")
   );
 
